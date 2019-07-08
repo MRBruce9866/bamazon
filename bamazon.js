@@ -1,5 +1,7 @@
 var Database = require('./database');
 var inquirer = require('inquirer');
+var cTable = require('console.table');
+var products = [];
 var currentUsername;
 
 var inquireQuestions = {
@@ -66,7 +68,11 @@ var inquireQuestions = {
                 if(res.length > 0){
                     if(res[0].userPassword === answer.password){
                         currentUsername = res[0].userName;
-                        console.log(`Logged in as ${currentUsername}`)
+                        console.log(`Logged in as ${currentUsername}`);
+                        displayProducts(function(){
+                            inquire(inquireQuestions['Customer']);
+                        });
+                        
                     }else{
                         console.log('Password incorrect');
                         start();
@@ -79,16 +85,66 @@ var inquireQuestions = {
 
         }
     },
-    'Customer': {},
-    'Admin' : {},
-    '':{},
-    '':{},
-    '':{},
-    '':{},
-    '':{},
-    '':{},
-    '':{},
-    
+    'Customer': {
+        questions:[
+            {
+                name:'customerOption',
+                message:'What item ID would you like to purchase? ',
+                
+            },
+        ],
+        run: function(answer){
+                var product = products.find(function(item){
+                    if(item.itemID === parseInt(answer.customerOption)){
+                        return item;
+                    }
+                });
+                console.log(product);
+        }
+        
+    },
+    'Admin':{
+        questions:[
+            {
+                name:'',
+                message:'',
+                type:'list',
+                choices:[]
+            },
+        ],
+        run: function(answer){
+                
+        }
+        
+    },
+    '':{
+        questions:[
+            {
+                name:'',
+                message:'',
+                type:'list',
+                choices:[]
+            },
+        ],
+        run: function(answer){
+                
+        }
+        
+    },
+    '':{
+        questions:[
+            {
+                name:'',
+                message:'',
+                type:'list',
+                choices:[]
+            },
+        ],
+        run: function(answer){
+                
+        }
+        
+    },
 
 };
 
@@ -129,6 +185,24 @@ function createUser(name, password){
     });
 
 };
+
+function displayProducts(callback){
+    Database.pullData('SELECT * FROM products', function(err, res){
+        if(err) throw err;
+        // console.log(err);
+        // console.log(res);
+        if(res.length !== 0){
+            products = res;
+            // console.log(res);
+            console.log('\n\n')
+            console.table('Products',products);
+            callback(); 
+        }
+        
+    });
+}
+
+
 
 function inquire(prompt) {
     inquirer.prompt(prompt.questions).then(prompt.run);
