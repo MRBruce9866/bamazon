@@ -1,5 +1,6 @@
 var Database = require('./database');
 var inquirer = require('inquirer');
+var currentUsername;
 
 var inquireQuestions = {
     'Start': {
@@ -7,7 +8,7 @@ var inquireQuestions = {
             name: 'loginType',
             message: 'Choose an option: ',
             type: 'list',
-            choices: ['Customer Login', 'Admin Login', 'Create a New Account', 'Exit']
+            choices: ['Login', 'Create a New Account', 'Exit']
         }],
         run: function (answer) {
             if(answer.loginType !== 'Exit'){
@@ -15,8 +16,7 @@ var inquireQuestions = {
             }else{
                 Database.disconnectFromDatabase();
                 
-            }
-                
+            }               
         }
     },
     'Create a New Account': {
@@ -46,21 +46,62 @@ var inquireQuestions = {
             
         }
     },
+    'Login' :{
+        questions:[
+            {
+                name: 'name',
+                message: 'Username: '
+            },
+            {
+                name: 'password',
+                message: 'Password',
+                type: 'password'
+            },
+        ],
+        run: function (answer){
+
+            Database.pullData(`SELECT * FROM users WHERE userName = '${answer.name}'`, 
+            function(err, res){
+                if(err) throw err;
+                if(res.length > 0){
+                    if(res[0].userPassword === answer.password){
+                        currentUsername = res[0].userName;
+                        console.log(`Logged in as ${currentUsername}`)
+                    }else{
+                        console.log('Password incorrect');
+                        start();
+                    }
+                }else{
+                    console.log(`Account for ${answer.name} has not been created!`);
+                    start();;
+                }
+            })
+
+        }
+    },
+    'Customer': {},
+    'Admin' : {},
+    '':{},
+    '':{},
+    '':{},
+    '':{},
+    '':{},
+    '':{},
+    '':{},
+    
 
 };
 
 Database.connectToDatabase(function (){
-    inquire(inquireQuestions['Start']);
+    start();
 });
 
-
-
-
-
+function start(){
+    inquire(inquireQuestions['Start']);
+}
 
 
 function createUser(name, password){
-
 
     Database.pullData('SELECT userName FROM users', function (err, res){
         if(err) throw err;
@@ -81,16 +122,13 @@ function createUser(name, password){
                 if(err) throw err;
                 if(res){
                     console.log(`${name} was created!`);
-                    inquire(inquireQuestions['Start']);
+                    start();;
                 }
             });
         }
     });
 
 };
-
-
-
 
 function inquire(prompt) {
     inquirer.prompt(prompt.questions).then(prompt.run);
