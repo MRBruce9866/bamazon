@@ -17,7 +17,6 @@ var inquireQuestions = {
                 inquire(inquireQuestions[answer.loginType]);
             } else {
                 Database.disconnectFromDatabase();
-
             }
         }
     },
@@ -67,13 +66,9 @@ var inquireQuestions = {
                     if (res.length > 0) {
                         if (res[0].userPassword === answer.password) {
                             currentUser = res[0];
-                            console.log(`Logged in as ${currentUser.userName}`);
                             console.log('\033c');
-                            displayProducts(function () {
-                                console.log(`Funds: $${currentUser.currentFunds.toFixed(2)}\n`)
-                                
-                                inquire(inquireQuestions['Customer']);
-                            });
+                            console.log(`Logged in as ${currentUser.userName}`);
+                            displayProducts(showCustomerMenu);
 
                         } else {
                             console.log('Password incorrect');
@@ -95,27 +90,15 @@ var inquireQuestions = {
             choices: ['Add Funds', 'Purchase Item', 'View Purchase History', 'Logout']
         }, ],
         run: function (answer) {
-            switch (answer.customerOption) {
-                case 'Add Funds':
-
-                    break;
-                case 'Purchase Item':
-
-                    break;
-                case 'View Purchase History':
-
-                    break;
-                case 'Logout':
-                    console.log(`\n ${currentUser.userName} logged out.\n`)
-                    currentUser = {};
-                    start();
-                    break;
-
-                default:
-                    break;
+            if (answer.customerOption === 'Logout') {
+                console.log(`\n ${currentUser.userName} logged out.\n`)
+                currentUser = {};
+                start();
+            } else {
+                inquire(inquireQuestions[answer.customerOption]);
             }
-        }
 
+        }
     },
     'Admin': {
         questions: [{
@@ -129,15 +112,24 @@ var inquireQuestions = {
         }
 
     },
-    '': {
+    'Add Funds': {
         questions: [{
-            name: '',
-            message: '',
-            type: 'list',
-            choices: []
+            name: 'amount',
+            message: 'How much would you like to add? ',
+            type: 'number'
+
         }, ],
         run: function (answer) {
-
+            if (parseFloat(answer.amount.toFixed(2)) > 0) {
+                currentUser.currentFunds += parseFloat(answer.amount.toFixed(2));
+                addFunds(function (){
+                    displayProducts(showCustomerMenu);
+                });
+            }else{
+                displayProducts(showCustomerMenu);
+            }
+            
+              
         }
 
     },
@@ -155,6 +147,7 @@ var inquireQuestions = {
     },
 
 };
+
 
 Database.connectToDatabase(function () {
     start();
@@ -210,10 +203,30 @@ function displayProducts(callback) {
     });
 }
 
+function showCustomerMenu(){
+    console.log(`Funds: $${currentUser.currentFunds.toFixed(2)}\n`)
+
+    inquire(inquireQuestions['Customer']);
+}
+
+function addFunds(callback){
+    Database.updateData('UPDATE users SET ? WHERE ?', 
+    [
+        {
+            currentFunds: currentUser.currentFunds
+        },
+        {
+            userID: currentUser.userID
+        }
+
+    ], function (err, res){
+        if(err) throw err;
+        callback();
+    });
+}
 
 
 function inquire(prompt) {
-    
+
     inquirer.prompt(prompt.questions).then(prompt.run);
 };
-
