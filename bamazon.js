@@ -133,19 +133,58 @@ var inquireQuestions = {
         }
 
     },
-    '': {
+    'Purchase Item': {
         questions: [{
-            name: '',
-            message: '',
-            type: 'list',
-            choices: []
-        }, ],
+            name: 'itemNum',
+            message: 'What itemID would you like to purchase? ',
+            type: 'number',
+        }, 
+        {
+            name: 'quantity',
+            message: 'How many of the item would you like? ',
+            type: 'number',
+        },],
         run: function (answer) {
-
+            
         }
 
     },
+    'View Purchase History': {
+        questions: [{
+            name: 'back',
+            message: 'Go back to Customer Screen:',
+            type: 'list',
+            choices: ['Back']
+        }, ],
+        run: function (answer) {
+            displayProducts(showCustomerMenu);
+        }
 
+    },
+    'Add to Inventory': {
+        questions: [{
+            name: 'back',
+            message: 'Go back to Customer Screen:',
+            type: 'list',
+            choices: ['Back']
+        }, ],
+        run: function (answer) {
+            displayProducts(showCustomerMenu);
+        }
+
+    },
+    'Add New Product': {
+        questions: [{
+            name: 'back',
+            message: 'Go back to Customer Screen:',
+            type: 'list',
+            choices: ['Back']
+        }, ],
+        run: function (answer) {
+            displayProducts(showCustomerMenu);
+        }
+
+    },
 };
 
 
@@ -205,8 +244,12 @@ function displayProducts(callback) {
 
 function showCustomerMenu(){
     console.log(`Funds: $${currentUser.currentFunds.toFixed(2)}\n`)
-
     inquire(inquireQuestions['Customer']);
+}
+
+function showAdminMenu(){
+    // console.log(`Funds: $${currentUser.currentFunds.toFixed(2)}\n`)
+    // inquire(inquireQuestions['Customer']);
 }
 
 function addFunds(callback){
