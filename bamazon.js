@@ -66,8 +66,6 @@ var inquireQuestions = {
                     if (res.length > 0) {
                         if (res[0].userPassword === answer.password) {
                             currentUser = res[0];
-                            console.log('\033c');
-                            console.log(`Logged in as ${currentUser.userName}`);
                             displayProducts(showCustomerMenu);
 
                         } else {
@@ -87,7 +85,7 @@ var inquireQuestions = {
             name: 'customerOption',
             message: 'Choose an option: ',
             type: 'list',
-            choices: ['Add Funds', 'Purchase Item', 'View Purchase History', 'Logout']
+            choices: ['Add Funds', 'Purchase Item', 'Logout']
         }, ],
         run: function (answer) {
             if (answer.customerOption === 'Logout') {
@@ -105,7 +103,7 @@ var inquireQuestions = {
             name: '',
             message: '',
             type: 'list',
-            choices: []
+            choices: ['View Products for Sale', 'View Low Inventory', 'Add to Inventory', 'Add New Product', 'Logout']
         }, ],
         run: function (answer) {
 
@@ -122,34 +120,47 @@ var inquireQuestions = {
         run: function (answer) {
             if (parseFloat(answer.amount.toFixed(2)) > 0) {
                 currentUser.currentFunds += parseFloat(answer.amount.toFixed(2));
-                addFunds(function (){
+                addFunds(function () {
                     displayProducts(showCustomerMenu);
                 });
-            }else{
+            } else {
                 displayProducts(showCustomerMenu);
             }
-            
-              
+
+
         }
 
     },
     'Purchase Item': {
         questions: [{
-            name: 'itemNum',
-            message: 'What itemID would you like to purchase? ',
-            type: 'number',
-        }, 
-        {
-            name: 'quantity',
-            message: 'How many of the item would you like? ',
-            type: 'number',
-        },],
+                name: 'itemID',
+                message: 'What itemID would you like to purchase? ',
+                type: 'number',
+            },
+            {
+                name: 'quantity',
+                message: 'How many of the item would you like? ',
+                type: 'number',
+            },
+        ],
         run: function (answer) {
-            
+            purchaseItem(answer.itemID, answer.quantity)
         }
 
     },
-    'View Purchase History': {
+    'View Products for Sale': {
+        questions: [{
+            name: 'back',
+            message: 'Go back to Customer Screen:',
+            type: 'list',
+            choices: ['Back']
+        }, ],
+        run: function (answer) {
+            displayProducts(showCustomerMenu);
+        }
+
+    },
+    'View Low Inventory': {
         questions: [{
             name: 'back',
             message: 'Go back to Customer Screen:',
@@ -163,11 +174,18 @@ var inquireQuestions = {
     },
     'Add to Inventory': {
         questions: [{
-            name: 'back',
-            message: 'Go back to Customer Screen:',
-            type: 'list',
-            choices: ['Back']
-        }, ],
+                name: 'back',
+                message: 'What itemID would you like to add to?',
+                type: 'number'
+
+            },
+            {
+                name: 'back',
+                message: 'What itemID would you like to add to?',
+                type: 'number'
+
+            },
+        ],
         run: function (answer) {
             displayProducts(showCustomerMenu);
         }
@@ -199,7 +217,6 @@ function start() {
     inquire(inquireQuestions['Start']);
 }
 
-
 function createUser(name, password) {
     Database.pullData('SELECT userName FROM users', function (err, res) {
         if (err) throw err;
@@ -229,7 +246,7 @@ function createUser(name, password) {
 };
 
 function displayProducts(callback) {
-    console.log('\033c');
+    // console.log('\033c');
     console.log("\n[***] Bamazon Store [***]\n")
     Database.pullData('SELECT * FROM products', function (err, res) {
         if (err) throw err;
@@ -242,32 +259,87 @@ function displayProducts(callback) {
     });
 }
 
-function showCustomerMenu(){
+function showCustomerMenu() {
+    console.log(currentUser.userName);
+    console.log('--------------------------')
     console.log(`Funds: $${currentUser.currentFunds.toFixed(2)}\n`)
     inquire(inquireQuestions['Customer']);
 }
 
-function showAdminMenu(){
+function showAdminMenu() {
     // console.log(`Funds: $${currentUser.currentFunds.toFixed(2)}\n`)
     // inquire(inquireQuestions['Customer']);
 }
 
-function addFunds(callback){
-    Database.updateData('UPDATE users SET ? WHERE ?', 
-    [
-        {
-            currentFunds: currentUser.currentFunds
-        },
-        {
-            userID: currentUser.userID
-        }
+function addFunds(callback) {
+    Database.updateData('UPDATE users SET ? WHERE ?',
+        [{
+                currentFunds: currentUser.currentFunds
+            },
+            {
+                userID: currentUser.userID
+            }
 
-    ], function (err, res){
-        if(err) throw err;
-        callback();
-    });
+        ],
+        function (err, res) {
+            if (err) throw err;
+            callback();
+        });
 }
 
+function purchaseItem(id, qty) {
+    Database.pullData(`SELECT * FROM products WHERE itemID = ${id}`,
+        function (err, res) {
+            if (err) throw err;
+            if (res.length > 0) {
+                if (res[0].stockQuantity >= qty) {
+                    var totalCost = res[0].unitPrice * qty;
+                    if (totalCost <= currentUser.currentFunds) {
+                        var newStock = res[0].stockQuantity - qty;
+                        Database.updateData('UPDATE products SET ? WHERE ?',
+                            [{
+                                    stockQuantity: newStock
+                                },
+                                {
+                                    itemID: id
+                                }
+                            ],
+                            function (err, res) {
+                                if (err) throw err;
+                                console.log('Database Updated');
+                                console.log(currentUser)
+                                currentUser.currentFunds -= totalCost;
+                                Database.updateData('UPDATE users SET ? WHERE ?',
+                                    [{
+                                            currentFunds: currentUser.currentFunds
+                                        },
+                                        {
+                                            userID: currentUser.userID
+                                        }
+                                    ],
+                                    function (err, res) {
+                                        if (err) throw err;
+                                        console.log(`Transaction Successful. You bought ${qty} unit(s) of item ${id}`);
+                                        displayProducts(showCustomerMenu);
+                                    });
+                            });
+
+
+                    } else {
+                        console.log("Your account does not have enough funds!")
+                        displayProducts(showCustomerMenu);
+                    }
+
+                } else {
+                    console.log(`Insufficient quantity for item ${id}`)
+                    displayProducts(showCustomerMenu);
+                }
+            } else {
+                console.log(`Item id: ${id} does not exist`);
+                displayProducts(showCustomerMenu);
+            }
+        })
+}
 
 function inquire(prompt) {
 
