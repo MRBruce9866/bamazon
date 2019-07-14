@@ -173,20 +173,45 @@ var inquireQuestions = {
     },
     'Add to Inventory': {
         questions: [{
-                name: 'back',
+                name: 'id',
                 message: 'What itemID would you like to add to?',
                 type: 'number'
 
             },
             {
-                name: 'back',
+                name: 'qty',
                 message: 'What itemID would you like to add to?',
                 type: 'number'
 
             },
         ],
         run: function (answer) {
-            displayProducts(`Admin`);
+            Database.pullData(`SELECT stockQuantity FROM products WHERE itemID = ${answer.id}`,
+                function (err, res) {
+                    if (err) throw err;
+
+                    if (res.length > 0) {
+                        Database.updateData('UPDATE products SET ? WHERE ?',
+                            [{
+                                    stockQuantity: res[0].stockQuantity + answer.qty
+                                },
+                                {
+                                    itemID: answer.id
+                                }
+                            ],
+                            function (err, res) {
+                                if (err) throw err;
+                                products = [];
+                                displayProducts('Admin', `Added ${answer.qty} unit(s) of item ${answer.id} in stock`)
+                            });
+                    } else {
+                        displayProducts('Admin', `${answer.id} is not a valid itemID`)
+                    }
+
+                    console.log(res);
+                })
+
+
         }
 
     },
