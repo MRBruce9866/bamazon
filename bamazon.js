@@ -63,18 +63,18 @@ var inquireQuestions = {
             Database.pullData(`SELECT * FROM users WHERE userName = '${answer.name}'`,
                 function (err, res) {
                     if (err) throw err;
-                    
+
                     if (res.length > 0) {
                         if (res[0].userPassword === answer.password) {
                             currentUser = res[0];
-                            
+
                             switch (currentUser.userType) {
                                 case 1:
                                     displayProducts(`Admin`)
                                     break;
-                            
+
                                 default:
-                                        displayProducts(`Customer`)
+                                    displayProducts(`Customer`)
                                     break;
                             }
 
@@ -99,8 +99,6 @@ var inquireQuestions = {
         }, ],
         run: function (answer) {
             if (answer.customerOption === 'Logout') {
-                console.log(`\n ${currentUser.userName} logged out.\n`)
-                currentUser = {};
                 start();
             } else {
                 inquire(inquireQuestions[answer.customerOption]);
@@ -113,10 +111,25 @@ var inquireQuestions = {
             name: 'adminChoice',
             message: 'Choose an option',
             type: 'list',
-            choices: ['View Products for Sale', 'View Low Inventory', 'Add to Inventory', 'Add New Product', 'Logout']
+            choices: ['View Products of Sale', 'View Low Inventory', 'Add to Inventory', 'Add New Product', 'Logout']
         }, ],
         run: function (answer) {
-            
+            switch (answer.adminChoice) {
+                case 'View Products of Sale':
+                    displayProducts('Admin')
+                    break;
+                case 'View Low Inventory':
+                    displayLowInventory();
+                    break;
+
+                case 'Logout':
+                    start();
+                    break;
+
+                default:
+                    inquire(inquireQuestions[answer.adminChoice]);
+                    break;
+            }
         }
 
     },
@@ -155,30 +168,6 @@ var inquireQuestions = {
         ],
         run: function (answer) {
             purchaseItem(answer.itemID, answer.quantity)
-        }
-
-    },
-    'View Products for Sale': {
-        questions: [{
-            name: 'back',
-            message: 'Go back to Customer Screen:',
-            type: 'list',
-            choices: ['Back']
-        }, ],
-        run: function (answer) {
-            displayProducts(`Admin`);
-        }
-
-    },
-    'View Low Inventory': {
-        questions: [{
-            name: 'back',
-            message: 'Go back to Customer Screen:',
-            type: 'list',
-            choices: ['Back']
-        }, ],
-        run: function (answer) {
-            displayProducts(`Admin`);
         }
 
     },
@@ -221,6 +210,7 @@ Database.connectToDatabase(function () {
 });
 
 function start() {
+    currentUser = "";
     console.log('\033c');
     console.log(`\n[***] Welcome to Bamazon [***]\n`)
 
@@ -258,39 +248,56 @@ function createUser(name, password) {
 function displayProducts(menuType, message) {
     console.log('\033c');
     console.log(`\n[***] Bamazon Store [***]\n`)
-    if(products.length > 0){
+    if (products.length > 0) {
         console.table('Products', products);
-            
-            showMenu(menuType, message);
-    }else{
+
+        showMenu(menuType, message);
+    } else {
         Database.pullData('SELECT * FROM products', function (err, res) {
             if (err) throw err;
-            
+
             if (res.length !== 0) {
                 products = res;
                 console.table('Products', products);
-                
+
                 showMenu(menuType, message);
-    
+
             }
-    
+
         });
     }
-    
+
+}
+
+function displayLowInventory() {
+    console.log('\033c');
+    console.log(`\n[***] Bamazon Store [***]\n`)
+
+    Database.pullData('SELECT * FROM products WHERE stockQuantity < 10', function (err, res) {
+        if (err) throw err;
+
+
+        console.table('Low inventory', res);
+
+        showMenu('Admin');
+
+
+
+    });
+
+
 }
 
 function showMenu(menuType = 'Customer', message = ``) {
     console.log(currentUser.userName);
-    console.log(`Funds: $${currentUser.currentFunds.toFixed(2)}\n`) 
+    console.log(`Funds: $${currentUser.currentFunds.toFixed(2)}\n`)
     console.log('--------------------------')
     console.log(message)
     console.log('--------------------------\n');
-    
+
     inquire(inquireQuestions[menuType]);
-    
+
 }
-
-
 
 function addFunds(callback) {
     Database.updateData('UPDATE users SET ? WHERE ?',
@@ -327,7 +334,7 @@ function purchaseItem(id, qty) {
                             ],
                             function (err, res) {
                                 if (err) throw err;
-                                if(res){
+                                if (res) {
                                     console.log('Database Updated');
                                     products = [];
                                     console.log(currentUser)
@@ -342,11 +349,11 @@ function purchaseItem(id, qty) {
                                         ],
                                         function (err, res) {
                                             if (err) throw err;
-                                            if(res)
+                                            if (res)
                                                 displayProducts(`Customer`, `Transaction Successful. You bought ${qty} unit(s) of item ${id} for $${totalCost}`);
                                         });
                                 }
-                                
+
                             });
 
 
