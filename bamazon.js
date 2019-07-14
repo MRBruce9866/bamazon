@@ -40,8 +40,8 @@ var inquireQuestions = {
             if (answer.password1 === answer.password2) {
                 createUser(answer.userName, answer.password1)
             } else {
-                console.log("Passwords didn't match. ");
-                inquire(inquireQuestions["Create a New Account"])
+                console.log(`Passwords didn't match. `);
+                inquire(inquireQuestions[`Create a New Account`])
             }
 
         }
@@ -63,10 +63,20 @@ var inquireQuestions = {
             Database.pullData(`SELECT * FROM users WHERE userName = '${answer.name}'`,
                 function (err, res) {
                     if (err) throw err;
+                    
                     if (res.length > 0) {
                         if (res[0].userPassword === answer.password) {
                             currentUser = res[0];
-                            displayProducts(showCustomerMenu);
+                            
+                            switch (currentUser.userType) {
+                                case 1:
+                                    displayProducts(`Admin`)
+                                    break;
+                            
+                                default:
+                                        displayProducts(`Customer`)
+                                    break;
+                            }
 
                         } else {
                             console.log('Password incorrect');
@@ -100,13 +110,13 @@ var inquireQuestions = {
     },
     'Admin': {
         questions: [{
-            name: '',
-            message: '',
+            name: 'adminChoice',
+            message: 'Choose an option',
             type: 'list',
             choices: ['View Products for Sale', 'View Low Inventory', 'Add to Inventory', 'Add New Product', 'Logout']
         }, ],
         run: function (answer) {
-
+            
         }
 
     },
@@ -121,10 +131,10 @@ var inquireQuestions = {
             if (parseFloat(answer.amount.toFixed(2)) > 0) {
                 currentUser.currentFunds += parseFloat(answer.amount.toFixed(2));
                 addFunds(function () {
-                    displayProducts(showCustomerMenu);
+                    displayProducts('Customer', `$${answer.amount.toFixed(2)} has been added to your account`);
                 });
             } else {
-                displayProducts(showCustomerMenu);
+                displayProducts('Customer', `No funds have been added.`);
             }
 
 
@@ -156,7 +166,7 @@ var inquireQuestions = {
             choices: ['Back']
         }, ],
         run: function (answer) {
-            displayProducts(showCustomerMenu);
+            displayProducts(`Admin`);
         }
 
     },
@@ -168,7 +178,7 @@ var inquireQuestions = {
             choices: ['Back']
         }, ],
         run: function (answer) {
-            displayProducts(showCustomerMenu);
+            displayProducts(`Admin`);
         }
 
     },
@@ -187,7 +197,7 @@ var inquireQuestions = {
             },
         ],
         run: function (answer) {
-            displayProducts(showCustomerMenu);
+            displayProducts(`Admin`);
         }
 
     },
@@ -199,7 +209,7 @@ var inquireQuestions = {
             choices: ['Back']
         }, ],
         run: function (answer) {
-            displayProducts(showCustomerMenu);
+            displayProducts(`Admin`);
         }
 
     },
@@ -212,7 +222,7 @@ Database.connectToDatabase(function () {
 
 function start() {
     console.log('\033c');
-    console.log("\n[***] Welcome to Bamazon [***]\n")
+    console.log(`\n[***] Welcome to Bamazon [***]\n`)
 
     inquire(inquireQuestions['Start']);
 }
@@ -245,31 +255,42 @@ function createUser(name, password) {
 
 };
 
-function displayProducts(callback) {
-    // console.log('\033c');
-    console.log("\n[***] Bamazon Store [***]\n")
-    Database.pullData('SELECT * FROM products', function (err, res) {
-        if (err) throw err;
-        if (res.length !== 0) {
-            products = res;
-            console.table('Products', products);
-            callback();
-        }
-
-    });
+function displayProducts(menuType, message) {
+    console.log('\033c');
+    console.log(`\n[***] Bamazon Store [***]\n`)
+    if(products.length > 0){
+        console.table('Products', products);
+            
+            showMenu(menuType, message);
+    }else{
+        Database.pullData('SELECT * FROM products', function (err, res) {
+            if (err) throw err;
+            
+            if (res.length !== 0) {
+                products = res;
+                console.table('Products', products);
+                
+                showMenu(menuType, message);
+    
+            }
+    
+        });
+    }
+    
 }
 
-function showCustomerMenu() {
+function showMenu(menuType = 'Customer', message = ``) {
     console.log(currentUser.userName);
+    console.log(`Funds: $${currentUser.currentFunds.toFixed(2)}\n`) 
     console.log('--------------------------')
-    console.log(`Funds: $${currentUser.currentFunds.toFixed(2)}\n`)
-    inquire(inquireQuestions['Customer']);
+    console.log(message)
+    console.log('--------------------------\n');
+    
+    inquire(inquireQuestions[menuType]);
+    
 }
 
-function showAdminMenu() {
-    // console.log(`Funds: $${currentUser.currentFunds.toFixed(2)}\n`)
-    // inquire(inquireQuestions['Customer']);
-}
+
 
 function addFunds(callback) {
     Database.updateData('UPDATE users SET ? WHERE ?',
@@ -306,37 +327,40 @@ function purchaseItem(id, qty) {
                             ],
                             function (err, res) {
                                 if (err) throw err;
-                                console.log('Database Updated');
-                                console.log(currentUser)
-                                currentUser.currentFunds -= totalCost;
-                                Database.updateData('UPDATE users SET ? WHERE ?',
-                                    [{
-                                            currentFunds: currentUser.currentFunds
-                                        },
-                                        {
-                                            userID: currentUser.userID
-                                        }
-                                    ],
-                                    function (err, res) {
-                                        if (err) throw err;
-                                        console.log(`Transaction Successful. You bought ${qty} unit(s) of item ${id}`);
-                                        displayProducts(showCustomerMenu);
-                                    });
+                                if(res){
+                                    console.log('Database Updated');
+                                    products = [];
+                                    console.log(currentUser)
+                                    currentUser.currentFunds -= totalCost;
+                                    Database.updateData('UPDATE users SET ? WHERE ?',
+                                        [{
+                                                currentFunds: currentUser.currentFunds
+                                            },
+                                            {
+                                                userID: currentUser.userID
+                                            }
+                                        ],
+                                        function (err, res) {
+                                            if (err) throw err;
+                                            if(res)
+                                                displayProducts(`Customer`, `Transaction Successful. You bought ${qty} unit(s) of item ${id} for $${totalCost}`);
+                                        });
+                                }
+                                
                             });
 
 
                     } else {
-                        console.log("Your account does not have enough funds!")
-                        displayProducts(showCustomerMenu);
+                        displayProducts(`Customer`, `You do not have enough money in your account. Total cost would be $${totalCost}`);
                     }
 
                 } else {
                     console.log(`Insufficient quantity for item ${id}`)
-                    displayProducts(showCustomerMenu);
+                    displayProducts('Customer', `Sorry, we only have ${res[0].stockQuantity} units of item ${res[0].itemID} in stock!`);
                 }
             } else {
-                console.log(`Item id: ${id} does not exist`);
-                displayProducts(showCustomerMenu);
+                console.log();
+                displayProducts(`Customer`, `Item id: ${id} does not exist`);
             }
         })
 }
