@@ -216,14 +216,46 @@ var inquireQuestions = {
 
     },
     'Add New Product': {
-        questions: [{
-            name: 'back',
-            message: 'Go back to Customer Screen:',
-            type: 'list',
-            choices: ['Back']
-        }, ],
+        questions: 
+        [
+            {
+                name: 'name',
+                message: 'Name: ',
+            },
+            {
+                name: 'department',
+                message: 'Department: ',
+            },
+            {
+                name: 'unitPrice',
+                message: 'Unit Price: (numbers only)',
+                type: 'number'
+            },
+            {
+                name: 'quantity',
+                message: 'Quantity: ',
+            },
+        ],
         run: function (answer) {
-            displayProducts(`Admin`);
+            if(answer.name){
+                var item = {
+                    productName: answer.name,
+                    departmentName: answer.department,
+                    unitPrice: answer.unitPrice,
+                    stockQuantity: answer.quantity
+                }
+
+                Database.insertData("INSERT INTO products SET ?", item, function (err, res){
+                    if(err) throw err;
+                    if(res){
+                        displayProducts('Admin', `Item Successfully Added`);
+                    }else{
+                        console.log(res);
+                    }
+                })
+            }else{
+
+            }
         }
 
     },
