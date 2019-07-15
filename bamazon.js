@@ -180,7 +180,7 @@ var inquireQuestions = {
             },
             {
                 name: 'qty',
-                message: 'What itemID would you like to add to?',
+                message: 'How many would you like to add?',
                 type: 'number'
 
             },

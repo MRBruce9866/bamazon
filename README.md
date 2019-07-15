@@ -78,7 +78,7 @@ View Low Inventory (show items with less than 10 units)
 ```sh
 Add to Inventory
 ```
-![](images/addProd1.PNG) ![](images/addProd2.PNG) ![](images/addProd3.PNG) 
+![](images/addProd1.PNG) ![](images/addProd2.PNG)
 
 ```sh
 Add New Product
