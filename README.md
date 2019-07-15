@@ -44,11 +44,47 @@ Create a New Account
 ```sh
 Login
 ```
+![](images/login1.PNG) ![](images/login2.PNG) ![](images/customerMainMenu.PNG) 
 
-![](images/login1.PNG) ![](images/login2.PNG) 
 
 
-![](images/customerMainMenu.PNG) 
+```sh
+Add Funds
+```
+![](images/addFunds1.PNG) ![](images/addFunds2.PNG) 
+
+```sh
+Purchase Item
+```
+![](images/purchaseItem1.PNG) ![](images/purchaseItem2.PNG)
+
+![](images/purchaseItemError1.PNG) ![](images/purchaseItemError2.PNG)
+
+```sh
+Login (admin)
+```
+![](images/adminLogin.PNG) 
+
+```sh
+View Products For Sale (default menu)
+```
+![](images/adminMainMenu.PNG)
+
+```sh
+View Low Inventory (show items with less than 10 units)
+```
+![](images/adminLowInv.PNG)
+
+```sh
+Add to Inventory
+```
+![](images/addProd1.PNG) ![](images/addProd2.PNG) ![](images/addProd3.PNG) 
+
+```sh
+Add New Product
+```
+![](images/newProd1.PNG) ![](images/newProd2.PNG) 
+
 
 
 
