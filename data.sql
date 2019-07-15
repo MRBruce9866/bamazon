@@ -20,16 +20,6 @@ stockQuantity integer(10) not null,
 primary key(itemID)
 );
 
-create table purchase_orders(
-purchaseID integer(10) not null auto_increment,
-customerID integer(10) not null,
-itemID integer(10) not null,
-quantityPurchased integer(10) not null,
-priceAtPurchase decimal(10,2) not null,
-totalCost decimal(10,2) not null,
-primary key(purchaseID)
-
-);
 insert into users (userName, userPassword, userType) values ('admin','admin', 1);
 insert into users (userName, userPassword) values ('Mark','1234');
 

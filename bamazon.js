@@ -1,7 +1,7 @@
 var Database = require('./database');
 var inquirer = require('inquirer');
 var cTable = require('console.table');
-var products = [];
+
 var currentUser;
 
 var inquireQuestions = {
@@ -28,20 +28,22 @@ var inquireQuestions = {
             {
                 name: 'password1',
                 message: 'Create Password: ',
-                type: 'password'
+                type: 'password',
+                mask: '*'
             },
             {
                 name: 'password2',
                 message: 'Retype Password: ',
-                type: 'password'
+                type: 'password',
+                mask: '*'
             },
         ],
         run: function (answer) {
             if (answer.password1 === answer.password2) {
                 createUser(answer.userName, answer.password1)
             } else {
-                console.log(`Passwords didn't match. `);
-                inquire(inquireQuestions[`Create a New Account`])
+                
+                start(`Passwords didn't match. `)
             }
 
         }
@@ -79,12 +81,10 @@ var inquireQuestions = {
                             }
 
                         } else {
-                            console.log('Password incorrect');
-                            start();
+                            start('Password incorrect');
                         }
                     } else {
-                        console.log(`Account for ${answer.name} has not been created!`);
-                        start();;
+                        start(`Account for ${answer.name} has not been created!`);;
                     }
                 })
 
@@ -111,11 +111,11 @@ var inquireQuestions = {
             name: 'adminChoice',
             message: 'Choose an option',
             type: 'list',
-            choices: ['View Products of Sale', 'View Low Inventory', 'Add to Inventory', 'Add New Product', 'Logout']
+            choices: ['View Products for Sale', 'View Low Inventory', 'Add to Inventory', 'Add New Product', 'Logout']
         }, ],
         run: function (answer) {
             switch (answer.adminChoice) {
-                case 'View Products of Sale':
+                case 'View Products for Sale':
                     displayProducts('Admin')
                     break;
                 case 'View Low Inventory':
@@ -201,7 +201,7 @@ var inquireQuestions = {
                             ],
                             function (err, res) {
                                 if (err) throw err;
-                                products = [];
+
                                 displayProducts('Admin', `Added ${answer.qty} unit(s) of item ${answer.id} in stock`)
                             });
                     } else {
@@ -216,9 +216,7 @@ var inquireQuestions = {
 
     },
     'Add New Product': {
-        questions: 
-        [
-            {
+        questions: [{
                 name: 'name',
                 message: 'Name: ',
             },
@@ -237,7 +235,7 @@ var inquireQuestions = {
             },
         ],
         run: function (answer) {
-            if(answer.name){
+            if (answer.name) {
                 var item = {
                     productName: answer.name,
                     departmentName: answer.department,
@@ -245,15 +243,15 @@ var inquireQuestions = {
                     stockQuantity: answer.quantity
                 }
 
-                Database.insertData("INSERT INTO products SET ?", item, function (err, res){
-                    if(err) throw err;
-                    if(res){
+                Database.insertData("INSERT INTO products SET ?", item, function (err, res) {
+                    if (err) throw err;
+                    if (res) {
                         displayProducts('Admin', `Item Successfully Added`);
-                    }else{
+                    } else {
                         console.log(res);
                     }
                 })
-            }else{
+            } else {
 
             }
         }
@@ -266,10 +264,12 @@ Database.connectToDatabase(function () {
     start();
 });
 
-function start() {
+function start(message = "") {
     currentUser = "";
     console.log('\033c');
     console.log(`\n[***] Welcome to Bamazon [***]\n`)
+
+    console.log(message);
 
     inquire(inquireQuestions['Start']);
 }
@@ -283,8 +283,7 @@ function createUser(name, password) {
                     return result;
                 }
             })) {
-            console.log('Username already exists');
-            inquire(inquireQuestions['Create a New Account']);
+            start('Username already exists')
         } else {
 
             Database.insertData('INSERT INTO users SET ?', {
@@ -293,8 +292,8 @@ function createUser(name, password) {
             }, function (err, res) {
                 if (err) throw err;
                 if (res) {
-                    console.log(`${name} was created!`);
-                    start();;
+                    
+                    start(`${name} was created!`);;
                 }
             });
         }
@@ -305,24 +304,23 @@ function createUser(name, password) {
 function displayProducts(menuType, message) {
     console.log('\033c');
     console.log(`\n[***] Bamazon Store [***]\n`)
-    if (products.length > 0) {
-        console.table('Products', products);
+    Database.pullData('SELECT * FROM products', function (err, res) {
+        if (err) throw err;
 
-        showMenu(menuType, message);
-    } else {
-        Database.pullData('SELECT * FROM products', function (err, res) {
-            if (err) throw err;
+        if (res.length !== 0) {
 
-            if (res.length !== 0) {
-                products = res;
-                console.table('Products', products);
+            res.map(function (item){
+                item.unitPrice = item.unitPrice.toFixed(2);
+            })
 
-                showMenu(menuType, message);
+            console.table('Products', res);
 
-            }
+            showMenu(menuType, message);
 
-        });
-    }
+        }
+
+    });
+
 
 }
 
@@ -393,7 +391,7 @@ function purchaseItem(id, qty) {
                                 if (err) throw err;
                                 if (res) {
                                     console.log('Database Updated');
-                                    products = [];
+
                                     console.log(currentUser)
                                     currentUser.currentFunds -= totalCost;
                                     Database.updateData('UPDATE users SET ? WHERE ?',

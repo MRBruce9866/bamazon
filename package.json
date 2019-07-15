@@ -4,7 +4,7 @@
   "description": "",
   "main": "bamazon.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node bamazon.js"
   },
   "repository": {
     "type": "git",
